@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Number Bonds Explorer</title>
+<style>
+  body { 
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; 
+    text-align: center; 
+    background: #e0f7fa; 
+    padding: 20px; 
+    color: #333;
+  }
+  .container { 
+    background: white; 
+    border-radius: 20px; 
+    padding: 30px; 
+    max-width: 850px; /* Widened the container so 10 circles easily fit */
+    margin: auto; 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+    border: 5px solid #00bcd4;
+  }
+  
+  .controls { margin: 20px 0; }
+  select { 
+    font-size: 6rem; 
+    font-weight: bold; 
+    padding: 10px 40px; 
+    border-radius: 25px; 
+    border: 5px solid #00bcd4; 
+    color: #0097a7;
+    background-color: #f0fcfd;
+    cursor: pointer; 
+  }
+  
+  /* Slider styling */
+  input[type=range] { 
+    width: 80%; 
+    margin: 40px 0; 
+    cursor: pointer;
+    accent-color: #ff9800;
+  }
+  
+  /* Visual dots */
+  #visuals {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap; /* Forces all circles to stay on one row */
+    min-height: 80px;
+    margin: 20px 0;
+    gap: 12px; /* Slightly adjusted gap for a perfect fit */
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 15px;
+  }
+  .circle { 
+    width: 55px; /* Scaled down just a tiny bit */
+    height: 55px; 
+    border-radius: 50%; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+    flex-shrink: 0; /* Prevents circles from squishing if the screen gets small */
+  }
+  .circle:hover { transform: scale(1.1); }
+  .part1 { background-color: #ff5252; } /* Red */
+  .part2 { background-color: #448aff; } /* Blue */
+  
+  /* Equation styling */
+  .equation { 
+    font-size: 4rem; 
+    font-weight: bold; 
+    margin: 20px 0; 
+    background: #fff9c4;
+    display: inline-block;
+    padding: 15px 40px;
+    border-radius: 20px;
+    border: 4px dashed #fbc02d;
+  }
+  .num1 { color: #ff5252; }
+  .num2 { color: #448aff; }
+  .total { color: #4caf50; }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <div class="controls">
+      <select id="targetNum" onchange="updateBonds()">
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9" selected>9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+
+    <input type="range" id="splitter" min="0" max="9" value="4" oninput="updateBonds()">
+
+    <div id="visuals"></div>
+
+    <div class="equation" id="eq">
+      <span class="num1" id="val1">4</span> + <span class="num2" id="val2">5</span> = <span class="total" id="valTotal">9</span>
+    </div>
+  </div>
+
+  <script>
+    function updateBonds() {
+      let total = parseInt(document.getElementById('targetNum').value);
+      let slider = document.getElementById('splitter');
+      
+      // Ensure slider max matches the chosen target number
+      slider.max = total; 
+      
+      let part1 = parseInt(slider.value);
+      let part2 = total - part1;
+
+      // Update Visual Circles
+      let vis = document.getElementById('visuals');
+      vis.innerHTML = ''; // clear previous
+      
+      for(let i = 0; i < part1; i++) { 
+        vis.innerHTML += '<div class="circle part1"></div>'; 
+      }
+      for(let i = 0; i < part2; i++) { 
+        vis.innerHTML += '<div class="circle part2"></div>'; 
+      }
+
+      // Update Equation Numbers
+      document.getElementById('val1').innerText = part1;
+      document.getElementById('val2').innerText = part2;
+      document.getElementById('valTotal').innerText = total;
+    }
+
+    // Run once on load to set up the default state
+    updateBonds();
+  </script>
+</body>
+</html>
