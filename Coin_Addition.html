@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coin Addition Builder</title>
+<style>
+  body {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    text-align: center;
+    background: #e8eaf6;
+    padding: 20px;
+    color: #333;
+    user-select: none;
+  }
+  .container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 900px;
+    margin: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 5px solid #3f51b5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { color: #303f9f; margin-top: 0; font-size: 2.5rem; margin-bottom: 5px; }
+  p { color: #666; font-size: 1.2rem; margin-top: 0; margin-bottom: 20px; }
+
+  /* Coin Dispenser Buttons */
+  .dispenser {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end; 
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .btn-coin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    background: white;
+    border: 2px solid #bbb;
+    border-radius: 15px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    min-width: 80px;
+  }
+  .btn-coin:active { transform: scale(0.95); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .btn-coin:hover { background: #e8eaf6; }
+  
+  .btn-label { font-size: 1.1rem; font-weight: bold; margin-top: 8px; color: #555; }
+
+  /* Hybrid Coin Styles (From the working previous app) */
+  .coin {
+    position: relative;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset -3px -3px 6px rgba(0,0,0,0.4), 
+                inset 3px 3px 6px rgba(255,255,255,0.6), 
+                2px 4px 5px rgba(0,0,0,0.3);
+  }
+  
+  .penny-fallback { background: radial-gradient(circle at 30% 30%, #e69d71, #b56535 60%, #7a3a18); }
+  .silver-fallback { background: radial-gradient(circle at 30% 30%, #f0f0f0, #c4c4c4 60%, #8c8c8c); }
+
+  .coin img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    z-index: 2;
+  }
+
+  .coin span {
+    position: relative;
+    z-index: 1; 
+    color: rgba(0,0,0,0.7);
+    font-weight: 900;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.4), -1px -1px 0px rgba(0,0,0,0.2);
+    opacity: 0; 
+  }
+  
+  /* MATHEMATICALLY PERFECT REAL-WORLD SIZES */
+  .quarter { width: 90px; height: 90px; font-size: 1.6rem; }
+  .nickel { width: 79px; height: 79px; font-size: 1.4rem; }
+  .penny { width: 71px; height: 71px; font-size: 1.3rem; }
+  .dime { width: 66px; height: 66px; font-size: 1.2rem; }
+
+  /* The Equation Mat */
+  .equation-workspace {
+    width: 100%;
+    min-height: 180px;
+    background-color: #fff9c4;
+    border: 4px dashed #fbc02d;
+    border-radius: 15px;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 15px; 
+    margin-bottom: 20px;
+  }
+
+  /* Make equation coins look clickable to remove */
+  .equation-coin {
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .equation-coin:hover {
+    transform: scale(1.1) rotate(-5deg);
+  }
+
+  .plus-sign {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #f57f17;
+  }
+
+  /* The Answer Area */
+  .answer-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 15px;
+    border: 3px solid #64b5f6;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .equals-sign {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #1976d2;
+  }
+
+  #answer-input {
+    font-size: 2.5rem;
+    font-weight: bold;
+    width: 120px;
+    text-align: center;
+    border: 3px solid #1976d2;
+    border-radius: 10px;
+    padding: 5px;
+    font-family: inherit;
+  }
+
+  .cents-symbol {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .btn-check {
+    font-size: 1.5rem;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    background-color: #4caf50;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: transform 0.1s;
+    margin-left: 10px;
+  }
+  .btn-check:active { transform: scale(0.95); }
+
+  /* Feedback Message */
+  #feedback {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-top: 20px;
+    min-height: 40px; /* Prevents jumping layout when text appears */
+  }
+
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Coin Addition!</h1>
+    <p>Click coins to add them. Click a coin in the yellow box to remove it!</p>
+
+    <div class="dispenser">
+      <div class="btn-coin" onclick="addCoinToEquation('penny penny-fallback', 1, 'https://commons.wikimedia.org/wiki/Special:FilePath/US_One_Cent_Obv.png?width=200')">
+        <div class="coin penny penny-fallback">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/US_One_Cent_Obv.png?width=200" onerror="this.style.opacity=0; this.parentElement.querySelector('span').style.opacity=1;" alt="Penny">
+          <span>1¢</span>
+        </div>
+        <div class="btn-label">Penny</div>
+      </div>
+      
+      <div class="btn-coin" onclick="addCoinToEquation('nickel silver-fallback', 5, 'https://commons.wikimedia.org/wiki/Special:FilePath/Jefferson-Nickel-Unc-Obv.jpg?width=200')">
+        <div class="coin nickel silver-fallback">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Jefferson-Nickel-Unc-Obv.jpg?width=200" onerror="this.style.opacity=0; this.parentElement.querySelector('span').style.opacity=1;" alt="Nickel">
+          <span>5¢</span>
+        </div>
+        <div class="btn-label">Nickel</div>
+      </div>
+      
+      <div class="btn-coin" onclick="addCoinToEquation('dime silver-fallback', 10, 'https://commons.wikimedia.org/wiki/Special:FilePath/Dime_Obverse_13.png?width=200')">
+        <div class="coin dime silver-fallback">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Dime_Obverse_13.png?width=200" onerror="this.style.opacity=0; this.parentElement.querySelector('span').style.opacity=1;" alt="Dime">
+          <span>10¢</span>
+        </div>
+        <div class="btn-label">Dime</div>
+      </div>
+      
+      <div class="btn-coin" onclick="addCoinToEquation('quarter silver-fallback', 25, 'https://commons.wikimedia.org/wiki/Special:FilePath/2006_Quarter_Proof.png?width=200')">
+        <div class="coin quarter silver-fallback">
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/2006_Quarter_Proof.png?width=200" onerror="this.style.opacity=0; this.parentElement.querySelector('span').style.opacity=1;" alt="Quarter">
+          <span>25¢</span>
+        </div>
+        <div class="btn-label">Quarter</div>
+      </div>
+    </div>
+
+    <div class="equation-workspace" id="equation-area">
+      <div style="color: #999; font-size: 1.2rem; font-style: italic;">Your coins will appear here...</div>
+    </div>
+
+    <div class="answer-zone">
+      <div class="equals-sign">=</div>
+      <input type="number" id="answer-input" placeholder="?">
+      <div class="cents-symbol">¢</div>
+      <button class="btn-check" onclick="checkAnswer()">Check</button>
+    </div>
+
+    <div id="feedback"></div>
+
+  </div>
+
+  <script>
+    // State management for the equation
+    let selectedCoins = [];
+    let uniqueIdCounter = 0;
+
+    function addCoinToEquation(coinClass, value, imgUrl) {
+      // Add the new coin to our array
+      selectedCoins.push({
+        id: uniqueIdCounter++,
+        class: coinClass,
+        val: value,
+        img: imgUrl
+      });
+      
+      clearFeedback(); // Reset feedback since the equation changed
+      renderEquation();
+    }
+
+    function removeCoin(idToRemove) {
+      // Filter out the coin the kid clicked on
+      selectedCoins = selectedCoins.filter(coin => coin.id !== idToRemove);
+      
+      clearFeedback(); // Reset feedback since the equation changed
+      renderEquation();
+    }
+
+    function renderEquation() {
+      const area = document.getElementById('equation-area');
+      area.innerHTML = ''; // Clear current display
+
+      if (selectedCoins.length === 0) {
+        area.innerHTML = '<div style="color: #999; font-size: 1.2rem; font-style: italic;">Your coins will appear here...</div>';
+        return;
+      }
+
+      // Loop through all selected coins and build the HTML
+      selectedCoins.forEach((coin, index) => {
+        // If it's not the first coin, add a plus sign before it
+        if (index > 0) {
+          let plus = document.createElement('div');
+          plus.className = 'plus-sign';
+          plus.innerText = '+';
+          area.appendChild(plus);
+        }
+
+        // Build the coin element
+        let newCoin = document.createElement('div');
+        newCoin.className = `coin ${coin.class} equation-coin`;
+        
+        // When clicked in the workspace, remove it
+        newCoin.onclick = () => removeCoin(coin.id);
+        
+        let img = document.createElement('img');
+        img.src = coin.img;
+        img.alt = coin.val + " cent coin";
+        
+        let text = document.createElement('span');
+        text.innerText = coin.val + '¢';
+
+        // Fallback check
+        img.onerror = function() { 
+          this.style.opacity = 0; 
+          text.style.opacity = 1;
+        };
+        
+        newCoin.appendChild(img);
+        newCoin.appendChild(text);
+        area.appendChild(newCoin);
+      });
+    }
+
+    function checkAnswer() {
+      const feedback = document.getElementById('feedback');
+      const inputField = document.getElementById('answer-input');
+      
+      // Calculate the true sum
+      let trueSum = selectedCoins.reduce((total, coin) => total + coin.val, 0);
+      let kidAnswer = parseInt(inputField.value);
+
+      if (selectedCoins.length === 0) {
+        feedback.innerText = "Please add some coins first!";
+        feedback.style.color = "#f57f17";
+        return;
+      }
+
+      if (isNaN(kidAnswer)) {
+        feedback.innerText = "Please type a number!";
+        feedback.style.color = "#f57f17";
+        return;
+      }
+
+      if (kidAnswer === trueSum) {
+        feedback.innerText = "🎉 Correct! Great job! 🎉";
+        feedback.style.color = "#4caf50";
+      } else {
+        feedback.innerText = "Oops! Try counting again. You can do it!";
+        feedback.style.color = "#f44336";
+      }
+    }
+
+    function clearFeedback() {
+      document.getElementById('feedback').innerText = '';
+      document.getElementById('answer-input').value = ''; // Optional: clears their previous answer so they have to try again
+    }
+
+  </script>
+</body>
+</html>
