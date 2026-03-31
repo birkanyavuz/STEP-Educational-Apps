@@ -15,7 +15,7 @@
     background: white; 
     border-radius: 20px; 
     padding: 30px; 
-    max-width: 850px; /* Widened the container so 10 circles easily fit */
+    max-width: 850px; 
     margin: auto; 
     box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
     border: 5px solid #00bcd4;
@@ -33,37 +33,81 @@
     cursor: pointer; 
   }
   
-  /* Slider styling */
+  /* --- NEW CUSTOM CHUNKY SLIDER --- */
   input[type=range] { 
+    -webkit-appearance: none; /* Turns off the default browser style */
+    appearance: none;
     width: 80%; 
     margin: 40px 0; 
     cursor: pointer;
-    accent-color: #ff9800;
+    background: #b2ebf2; /* Light blue chunky track */
+    height: 20px; 
+    border-radius: 10px;
+    border: 2px solid #00acc1;
   }
+
+  /* The Big Square Grabber (Chrome/Safari/Edge) */
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 50px; /* Big wide width */
+    height: 50px; /* Big height makes it a square */
+    background: #ff9800; /* Orange */
+    border: 5px solid #e65100; /* Darker orange outline */
+    border-radius: 12px; /* Slightly rounded corners so it's not sharp */
+    cursor: grab;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+  }
+  
+  input[type=range]::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.15); /* Pops out when they touch it! */
+    background: #ffb74d;
+  }
+
+  /* The Big Square Grabber (Firefox) */
+  input[type=range]::-moz-range-thumb {
+    width: 40px; 
+    height: 40px; 
+    background: #ff9800; 
+    border: 5px solid #e65100; 
+    border-radius: 12px; 
+    cursor: grab;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+  }
+  
+  input[type=range]::-moz-range-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.15);
+    background: #ffb74d;
+  }
+  /* ------------------------------- */
   
   /* Visual dots */
   #visuals {
     display: flex;
     justify-content: center;
-    flex-wrap: nowrap; /* Forces all circles to stay on one row */
+    flex-wrap: nowrap; 
     min-height: 80px;
     margin: 20px 0;
-    gap: 12px; /* Slightly adjusted gap for a perfect fit */
+    gap: 12px; 
     padding: 20px;
     background: #f5f5f5;
     border-radius: 15px;
   }
   .circle { 
-    width: 55px; /* Scaled down just a tiny bit */
+    width: 55px; 
     height: 55px; 
     border-radius: 50%; 
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     transition: transform 0.2s;
-    flex-shrink: 0; /* Prevents circles from squishing if the screen gets small */
+    flex-shrink: 0; 
   }
   .circle:hover { transform: scale(1.1); }
-  .part1 { background-color: #ff5252; } /* Red */
-  .part2 { background-color: #448aff; } /* Blue */
+  .part1 { background-color: #ff5252; } 
+  .part2 { background-color: #448aff; } 
   
   /* Equation styling */
   .equation { 
