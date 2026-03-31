@@ -1,72 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Classroom Learning Apps</title>
-<style>
-  body {
-    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-    background-color: #e0f7fa;
-    color: #333;
-    text-align: center;
-    padding: 40px 20px;
-    margin: 0;
-  }
-  .header { margin-bottom: 40px; }
-  h1 { color: #00838f; font-size: 3.5rem; margin: 0; }
-  p { font-size: 1.3rem; color: #555; }
-  
-  .grade-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-    max-width: 1000px;
-    margin: auto;
-  }
-  .grade-button {
-    background-color: white;
-    border: 4px solid #00838f;
-    border-radius: 15px;
-    padding: 25px 15px;
-    width: 200px;
-    text-decoration: none;
-    color: #00838f;
-    font-size: 1.5rem;
-    font-weight: bold;
-    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    transition: transform 0.2s, background-color 0.2s, color 0.2s;
-  }
-  .grade-button:hover {
-    transform: translateY(-5px);
-    background-color: #00838f;
-    color: white;
-  }
-</style>
+    <meta charset="UTF-8">
+    <title>STEP Academy Portal</title>
+    <script src="config.js"></script>
+    <style>
+        /* All the colorful styles we used before go here */
+        body { font-family: 'Comic Sans MS', sans-serif; text-align: center; background: #e0f7fa; padding: 20px; }
+        .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .btn { background: white; border: 4px solid #00838f; border-radius: 20px; padding: 30px; width: 220px; cursor: pointer; font-size: 1.5rem; text-decoration: none; color: #00838f; font-weight: bold; }
+        .btn:hover { background: #00838f; color: white; }
+        .back-btn { background: #ffb300; color: white; padding: 10px 20px; border-radius: 10px; display: inline-block; margin-bottom: 20px; text-decoration: none; }
+    </style>
 </head>
 <body>
+    <h1 id="title">🏫 STEP Academy App Portal</h1>
+    <div id="navigation"></div>
+    <div id="app-grid" class="grid"></div>
 
-  <div class="header">
-    <h1>🏫 STEP Academy App Portal</h1>
-    
-  </div>
+    <script>
+        const nav = document.getElementById('navigation');
+        const grid = document.getElementById('app-grid');
+        const title = document.getElementById('title');
 
-  <div class="grade-grid">
-<a href="kindergarten.html" class="grade-button">🎨 Kindergarten</a>    
-<a href="1st_grade.html" class="grade-button">🖍️ 1st Grade</a>
-    <a href="2nd_grade.html" class="grade-button">🧸 2nd Grade</a>
-    <a href="3rd_grade.html" class="grade-button">🎒 3rd Grade</a>
-    <a href="4th_grade.html" class="grade-button">🧭 4th Grade</a>
-    <a href="5th_grade.html" class="grade-button">🔭 5th Grade</a>
-    <a href="6th_grade.html" class="grade-button">🔬 6th Grade</a>
-    <a href="7th_grade.html" class="grade-button">📐 7th Grade</a>
-    <a href="8th_grade.html" class="grade-button">💻 8th Grade</a>
-    <a href="9th_grade.html" class="grade-button">🧬 9th Grade</a>
-    <a href="10th_grade.html" class="grade-button">🧪 10th Grade</a>
-    <a href="11th_grade.html" class="grade-button">📊 11th Grade</a>
-    <a href="12th_grade.html" class="grade-button">🎓 12th Grade</a>
-  </div>
+        function showGrades() {
+            nav.innerHTML = '';
+            grid.innerHTML = '';
+            title.innerText = "🏫 STEP Academy App Portal";
+            schoolConfig.grades.forEach(grade => {
+                const btn = document.createElement('div');
+                btn.className = 'btn';
+                btn.innerText = "🎒 " + grade;
+                btn.onclick = () => showSubjects(grade);
+                grid.appendChild(btn);
+            });
+        }
 
+        function showSubjects(grade) {
+            nav.innerHTML = `<a href="#" class="back-btn" onclick="showGrades()">⬅️ Back to School</a>`;
+            grid.innerHTML = '';
+            title.innerText = grade + " Folders";
+            schoolConfig.subjects.forEach(subject => {
+                const btn = document.createElement('div');
+                btn.className = 'btn';
+                btn.innerText = "📁 " + subject;
+                btn.onclick = () => showApps(grade, subject);
+                grid.appendChild(btn);
+            });
+        }
+
+        function showApps(grade, subject) {
+            nav.innerHTML = `<a href="#" class="back-btn" onclick="showSubjects('${grade}')">⬅️ Back to ${grade}</a>`;
+            grid.innerHTML = '';
+            title.innerText = grade + " " + subject;
+            const key = `${grade}-${subject}`;
+            const apps = schoolConfig.apps[key] || [];
+            
+            if (apps.length === 0) {
+                grid.innerHTML = "<p>Coming soon!</p>";
+            } else {
+                apps.forEach(app => {
+                    const a = document.createElement('a');
+                    a.className = 'btn';
+                    a.href = app.url;
+                    a.innerText = app.icon + " " + app.name;
+                    grid.appendChild(a);
+                });
+            }
+        }
+
+        showGrades(); // Start at the homepage
+    </script>
 </body>
 </html>
