@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyomino Area & Perimeter</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            background-color: #eef2f5;
+            color: #333;
+        }
+        .container { 
+            max-width: 700px; 
+            width: 100%; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        
+        /* Grid Styling */
+        #grid-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        #grid { 
+            display: grid; 
+            grid-template-columns: repeat(12, 30px); 
+            grid-template-rows: repeat(12, 30px); 
+            gap: 1px; 
+            background-color: #dfe6e9; 
+            border: 4px solid #2c3e50; 
+        }
+        .cell { 
+            width: 30px; 
+            height: 30px; 
+            background-color: white; 
+        }
+        /* The Tetris Block Color */
+        .filled { 
+            background-color: #3498db; 
+            box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .btn { 
+            padding: 12px 20px; 
+            font-size: 16px; 
+            font-weight: bold;
+            cursor: pointer; 
+            border: none; 
+            border-radius: 6px; 
+            flex: 1;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-gen { background-color: #2c3e50; color: white; }
+        .btn-check { background-color: #27ae60; color: white; }
+        .btn-gen:hover { background-color: #1a252f; }
+        .btn-check:hover { background-color: #219150; }
+
+        /* Input Sections */
+        .qa-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #bdc3c7;
+        }
+        .card h2 { margin-top: 0; font-size: 1.2rem; }
+        .input-group { margin: 15px 0; }
+        input[type="number"] {
+            padding: 8px;
+            width: 80px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        /* Hidden Results */
+        .solution { 
+            display: none; 
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            animation: fadeIn 0.5s;
+        }
+        .correct { color: #27ae60; font-weight: bold; }
+        .incorrect { color: #c0392b; font-weight: bold; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Shape Geometry</h1>
+    
+    <div id="grid-container">
+        <div id="grid"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-gen" onclick="generateShape()">Generate New Shape</button>
+        <button class="btn btn-check" onclick="checkAnswers()">Check Answers</button>
+    </div>
+
+    <div class="qa-section">
+        <div class="card" style="border-left-color: #3498db;">
+            <h2>Area</h2>
+            <p style="font-size: 0.9em; color: #666;">How to calculate: Count the total number of colored squares.</p>
+            
+            <div class="input-group">
+                <label>Your Guess: </label>
+                <input type="number" id="area-input" placeholder="0">
+            </div>
+
+            <div id="area-solution" class="solution">
+                <div id="area-feedback"></div>
+                <p><strong>Answer:</strong> <span id="area-val"></span> sq units</p>
+            </div>
+        </div>
+
+        <div class="card" style="border-left-color: #e67e22;">
+            <h2>Perimeter</h2>
+            <p style="font-size: 0.9em; color: #666;">How to calculate: Count the total number of exposed outer edges.</p>
+            
+            <div class="input-group">
+                <label>Your Guess: </label>
+                <input type="number" id="perimeter-input" placeholder="0">
+            </div>
+
+            <div id="perimeter-solution" class="solution">
+                <div id="perimeter-feedback"></div>
+                <p><strong>Answer:</strong> <span id="perimeter-val"></span> units</p>
+                <p style="font-size: 0.85em; color: #555;">(Walk along the outside of the shape and count every line segment!)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const gridSize = 12; // 12x12 grid
+    let currentShape = []; // Stores {x, y} of filled cells
+    let correctArea = 0;
+    let correctPerimeter = 0;
+
+    // Define standard "Tetris" block shapes (relative coordinates)
+    const tetrominoes = [
+        [[0,0], [0,1], [1,0], [1,1]], // O (Square)
+        [[0,0], [1,0], [2,0], [3,0]], // I (Line)
+        [[0,0], [1,0], [2,0], [2,1]], // L
+        [[0,0], [1,0], [2,0], [0,1]], // J
+        [[1,0], [0,1], [1,1], [2,1]], // T
+        [[1,0], [2,0], [0,1], [1,1]], // S
+        [[0,0], [1,0], [1,1], [2,1]]  // Z
+    ];
+
+    function initGrid() {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.id = `cell-${i}`;
+            grid.appendChild(cell);
+        }
+    }
+
+    function generateShape() {
+        // Reset UI
+        document.getElementById('area-solution').style.display = 'none';
+        document.getElementById('perimeter-solution').style.display = 'none';
+        document.getElementById('area-input').value = '';
+        document.getElementById('perimeter-input').value = '';
+        initGrid();
+        
+        currentShape = [];
+        
+        // 1. Start in the middle
+        let startX = 5;
+        let startY = 5;
+        
+        // 2. Decide how many blocks to stitch together (2 or 3)
+        const piecesCount = Math.random() > 0.5 ? 2 : 3;
+
+        // 3. Place pieces
+        for (let i = 0; i < piecesCount; i++) {
+            addRandomTetromino(i === 0);
+        }
+
+        drawShape();
+        calculateMetrics();
+    }
+
+    function addRandomTetromino(isFirst) {
+        let placed = false;
+        let attempts = 0;
+        
+        while (!placed && attempts < 50) {
+            attempts++;
+            
+            // Pick a random shape definition
+            const template = tetrominoes[Math.floor(Math.random() * tetrominoes.length)];
+            
+            // Determine position
+            let originX, originY;
+
+            if (isFirst) {
+                originX = 4;
+                originY = 4;
+            } else {
+                // Pick a random existing block to attach to
+                const anchor = currentShape[Math.floor(Math.random() * currentShape.length)];
+                // Pick a random offset (-2 to +2) to try and place near it
+                originX = anchor.x + (Math.floor(Math.random() * 5) - 2);
+                originY = anchor.y + (Math.floor(Math.random() * 5) - 2);
+            }
+
+            // Calculate potential new cells
+            let newCells = [];
+            let isValid = true;
+
+            for (let t of template) {
+                let absX = originX + t[0];
+                let absY = originY + t[1];
+
+                // Check Bounds
+                if (absX < 0 || absX >= gridSize || absY < 0 || absY >= gridSize) {
+                    isValid = false; 
+                    break;
+                }
+                
+                // Check if already filled
+                if (currentShape.some(s => s.x === absX && s.y === absY)) {
+                   // It's okay to overlap? No, let's avoid overlap to keep area distinct
+                   isValid = false;
+                   break;
+                }
+                newCells.push({x: absX, y: absY});
+            }
+
+            // If it's not the first piece, ensure it touches the existing shape
+            if (isValid && !isFirst) {
+                let touches = false;
+                for (let nc of newCells) {
+                    // Check neighbors of new cell
+                    const neighbors = [
+                        {x: nc.x+1, y: nc.y}, {x: nc.x-1, y: nc.y},
+                        {x: nc.x, y: nc.y+1}, {x: nc.x, y: nc.y-1}
+                    ];
+                    for (let n of neighbors) {
+                        if (currentShape.some(s => s.x === n.x && s.y === n.y)) {
+                            touches = true;
+                        }
+                    }
+                }
+                if (!touches) isValid = false;
+            }
+
+            if (isValid) {
+                currentShape.push(...newCells);
+                placed = true;
+            }
+        }
+    }
+
+    function drawShape() {
+        for (let cell of currentShape) {
+            const index = cell.y * gridSize + cell.x;
+            const el = document.getElementById(`cell-${index}`);
+            if(el) el.classList.add('filled');
+        }
+    }
+
+    function calculateMetrics() {
+        // Area
+        correctArea = currentShape.length;
+
+        // Perimeter
+        correctPerimeter = 0;
+        for (let cell of currentShape) {
+            const neighbors = [
+                {x: cell.x + 1, y: cell.y},
+                {x: cell.x - 1, y: cell.y},
+                {x: cell.x, y: cell.y + 1},
+                {x: cell.x, y: cell.y - 1}
+            ];
+            let edges = 4;
+            for (let n of neighbors) {
+                if (currentShape.some(s => s.x === n.x && s.y === n.y)) {
+                    edges--;
+                }
+            }
+            correctPerimeter += edges;
+        }
+        
+        // Store answers in hidden spans
+        document.getElementById('area-val').innerText = correctArea;
+        document.getElementById('perimeter-val').innerText = correctPerimeter;
+    }
+
+    function checkAnswers() {
+        const areaGuess = parseInt(document.getElementById('area-input').value);
+        const perimGuess = parseInt(document.getElementById('perimeter-input').value);
+
+        const areaFeed = document.getElementById('area-feedback');
+        const perimFeed = document.getElementById('perimeter-feedback');
+
+        // Show results
+        document.getElementById('area-solution').style.display = 'block';
+        document.getElementById('perimeter-solution').style.display = 'block';
+
+        // Check Area
+        if (areaGuess === correctArea) {
+            areaFeed.innerHTML = "<span class='correct'>✓ Correct!</span>";
+        } else {
+            areaFeed.innerHTML = "<span class='incorrect'>✗ Incorrect.</span>";
+        }
+
+        // Check Perimeter
+        if (perimGuess === correctPerimeter) {
+            perimFeed.innerHTML = "<span class='correct'>✓ Correct!</span>";
+        } else {
+            perimFeed.innerHTML = "<span class='incorrect'>✗ Incorrect.</span>";
+        }
+    }
+
+    // Run on load
+    window.onload = generateShape;
+</script>
+
+</body>
+</html>

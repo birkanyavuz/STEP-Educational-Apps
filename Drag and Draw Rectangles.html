@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic Rectangle Resizer</title>
+<style>
+  body {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    text-align: center;
+    background: #fdf5e6;
+    padding: 20px;
+    color: #333;
+    user-select: none; 
+  }
+  .container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 700px;
+    margin: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 5px solid #ff9800;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { color: #e65100; margin-top: 0; font-size: 2.5rem; }
+  
+  /* The Scoreboard */
+  .stats-board {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px 40px;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background: #fff3e0;
+    padding: 20px 40px;
+    border-radius: 15px;
+    border: 3px dashed #ffb74d;
+    width: 80%;
+  }
+  .stat-item { color: #555; }
+  .stat-item span { color: #e65100; font-size: 2rem; margin-left: 5px; }
+
+  /* The Graph Paper Area */
+  .workspace {
+    position: relative;
+    width: 600px;
+    height: 400px;
+    background-color: #fafafa;
+    background-image: 
+      linear-gradient(to right, #e0e0e0 1px, transparent 1px),
+      linear-gradient(to bottom, #e0e0e0 1px, transparent 1px);
+    background-size: 20px 20px;
+    border: 3px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    touch-action: none; 
+  }
+
+  /* The Shape */
+  .rectangle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(33, 150, 243, 0.3);
+    border: 3px solid #1E88E5;
+    box-sizing: border-box;
+    transition: width 0.05s, height 0.05s; 
+  }
+
+  /* The Drag Handle - Visually smaller, but retains a large touch area! */
+  .resize-handle {
+    position: absolute;
+    bottom: -6px; /* Adjusted to keep the tiny circle perfectly centered on the corner */
+    right: -6px;
+    width: 10px;  /* Much smaller! */
+    height: 10px;
+    background-color: #ff3d00;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    transition: transform 0.1s;
+  }
+  
+  /* This invisible box expands the "grab" area so kids don't miss the tiny dot */
+  .resize-handle::after {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: -15px;
+    right: -15px;
+    bottom: -15px;
+    border-radius: 50%;
+    background: transparent;
+  }
+
+  .resize-handle:hover { transform: scale(1.3); }
+  .resize-handle:active { transform: scale(1.1); background-color: #d50000; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stretch the Rectangle!</h1>
+    <p style="color: #666; font-size: 1.2rem; margin-top: -10px;">Drag the orange circle to stretch the shape.</p>
+    
+    <div class="stats-board">
+      <div class="stat-item">Width: <span id="valW">5</span></div>
+      <div class="stat-item">Height: <span id="valH">5</span></div>
+      <div class="stat-item">Area: <span id="valA">25</span></div>
+      <div class="stat-item">Perimeter: <span id="valP">20</span></div>
+    </div>
+
+    <div class="workspace" id="workspace">
+      <div class="rectangle" id="rect">
+        <div class="resize-handle" id="handle"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const handle = document.getElementById('handle');
+    const rect = document.getElementById('rect');
+    const workspace = document.getElementById('workspace');
+    
+    const valW = document.getElementById('valW');
+    const valH = document.getElementById('valH');
+    const valA = document.getElementById('valA');
+    const valP = document.getElementById('valP');
+
+    let isDragging = false;
+    const GRID_SIZE = 20; 
+
+    function updateStats(widthPx, heightPx) {
+      let wUnits = Math.max(1, Math.round(widthPx / GRID_SIZE));
+      let hUnits = Math.max(1, Math.round(heightPx / GRID_SIZE));
+
+      rect.style.width = (wUnits * GRID_SIZE) + 'px';
+      rect.style.height = (hUnits * GRID_SIZE) + 'px';
+
+      valW.innerText = wUnits;
+      valH.innerText = hUnits;
+      valA.innerText = wUnits * hUnits;
+      valP.innerText = 2 * (wUnits + hUnits);
+    }
+
+    function startDrag(e) {
+      e.preventDefault();
+      e.stopPropagation(); 
+      isDragging = true;
+    }
+
+    function doDrag(e) {
+      if (!isDragging) return;
+
+      let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+      let workspaceRect = workspace.getBoundingClientRect();
+      
+      let newWidth = clientX - workspaceRect.left;
+      let newHeight = clientY - workspaceRect.top;
+
+      if (newWidth > workspaceRect.width) newWidth = workspaceRect.width;
+      if (newHeight > workspaceRect.height) newHeight = workspaceRect.height;
+      
+      updateStats(newWidth, newHeight);
+    }
+
+    function stopDrag() {
+      isDragging = false;
+    }
+
+    handle.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', stopDrag);
+
+    handle.addEventListener('touchstart', startDrag, {passive: false});
+    document.addEventListener('touchmove', doDrag, {passive: false});
+    document.addEventListener('touchend', stopDrag);
+    
+    updateStats(100, 100);
+  </script>
+</body>
+</html>

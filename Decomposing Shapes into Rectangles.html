@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complex Shape Decomposer</title>
+<style>
+  body {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    text-align: center;
+    background: #e8eaf6;
+    padding: 20px;
+    color: #333;
+    user-select: none;
+  }
+  .container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 900px;
+    margin: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 5px solid #3f51b5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { color: #303f9f; margin-top: 0; font-size: 2.5rem; margin-bottom: 5px; }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    font-size: 1.2rem;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    transition: transform 0.1s, filter 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  }
+  button:active { transform: scale(0.95); }
+  button:hover { filter: brightness(1.1); }
+  
+  .btn-generate { background-color: #e91e63; }
+  .btn-whole { background-color: #757575; }
+  .btn-decompose { background-color: #4caf50; }
+
+  /* Main Workspace Layout */
+  .main-area {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Grid Workspace */
+  .workspace {
+    position: relative;
+    background-color: #fafafa;
+    border: 4px solid #9e9e9e;
+    border-radius: 8px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    /* This prevents the box from shrinking or growing */
+    flex-shrink: 0; 
+  }
+
+  /* SVG styling */
+  svg {
+    display: block;
+    shape-rendering: crispEdges; /* Prevents blurry pixels from causing micro-shifts */
+  }
+  svg text {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    font-weight: bold;
+    pointer-events: none;
+  }
+
+  /* Math Scoreboard Panel */
+  .math-panel {
+    background: #f5f5f5;
+    border: 3px dashed #3f51b5;
+    border-radius: 15px;
+    padding: 20px;
+    /* THE FIX: Lock the width so it NEVER pushes the drawing away! */
+    width: 300px; 
+    flex-shrink: 0; 
+    box-sizing: border-box;
+    
+    text-align: left;
+    font-size: 1.3rem;
+  }
+  .math-panel h3 {
+    margin-top: 0;
+    color: #3f51b5;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 10px;
+  }
+  .equation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+    min-height: 120px; 
+  }
+  .total-row {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #e91e63;
+    border-top: 3px solid #333;
+    padding-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Complex Shape Decomposer</h1>
+    <p style="color: #666; font-size: 1.1rem; margin-top: 0;">Generate a random shape, then break it apart to find the total area!</p>
+    
+    <div class="controls">
+      <button class="btn-generate" onclick="generateRandomShape()">🎲 Generate New Shape</button>
+      <button class="btn-whole" onclick="showSolidShape()">⬛ Show Solid Shape</button>
+      <button class="btn-decompose" onclick="showDecomposedShape()">✂️ Decompose Shape</button>
+    </div>
+
+    <div class="main-area">
+      <div class="workspace" id="workspace" style="width: 480px; height: 420px;">
+        <svg id="canvas" width="480" height="420"></svg>
+      </div>
+
+      <div class="math-panel">
+        <h3>Area Calculations</h3>
+        <div class="equation-list" id="equation-list">
+          </div>
+        <div class="total-row" id="total-area">
+          Total Area = ?
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GRID_COLS = 16;
+    const GRID_ROWS = 14;
+    const CELL_SIZE = 30; 
+    const svgWidth = GRID_COLS * CELL_SIZE;
+    const svgHeight = GRID_ROWS * CELL_SIZE;
+
+    const colors = [
+      { fill: 'rgba(244, 67, 54, 0.8)', stroke: '#d32f2f' },
+      { fill: 'rgba(33, 150, 243, 0.8)', stroke: '#1976d2' },
+      { fill: 'rgba(76, 175, 80, 0.8)', stroke: '#388e3c' },
+      { fill: 'rgba(255, 152, 0, 0.8)', stroke: '#f57c00' },
+      { fill: 'rgba(156, 39, 176, 0.8)', stroke: '#7b1fa2' },
+      { fill: 'rgba(0, 188, 212, 0.8)', stroke: '#0097a7' },
+      { fill: 'rgba(205, 220, 57, 0.8)', stroke: '#afb42b' }
+    ];
+
+    let grid = [];
+    let decomposedRects = [];
+    let totalArea = 0;
+    let savedMathHtml = '';
+
+    function init() {
+      generateRandomShape();
+    }
+
+    function generateRandomShape() {
+      grid = Array(GRID_ROWS).fill().map(() => Array(GRID_COLS).fill(false));
+      totalArea = 0;
+
+      let numBlobs = Math.floor(Math.random() * 3) + 3;
+      
+      let cx = Math.floor(GRID_COLS / 2) - 2;
+      let cy = Math.floor(GRID_ROWS / 2) - 2;
+      addRectToGrid(cx, cy, 4, 4);
+
+      for(let i = 1; i < numBlobs; i++) {
+        let attached = false;
+        let attempts = 0;
+        while(!attached && attempts < 50) {
+          let rx = Math.floor(Math.random() * GRID_COLS);
+          let ry = Math.floor(Math.random() * GRID_ROWS);
+          
+          if (grid[ry][rx]) {
+            let rw = Math.floor(Math.random() * 4) + 2; 
+            let rh = Math.floor(Math.random() * 4) + 2; 
+            
+            let startX = rx - Math.floor(Math.random() * rw);
+            let startY = ry - Math.floor(Math.random() * rh);
+            
+            if (addRectToGrid(startX, startY, rw, rh)) {
+              attached = true;
+            }
+          }
+          attempts++;
+        }
+      }
+
+      calculateDecomposition();
+      buildVisualLayers();
+    }
+
+    function addRectToGrid(x, y, w, h) {
+      if (x < 1 || y < 1 || x + w >= GRID_COLS - 1 || y + h >= GRID_ROWS - 1) return false;
+      for(let r = y; r < y + h; r++) {
+        for(let c = x; c < x + w; c++) {
+          grid[r][c] = true;
+        }
+      }
+      return true;
+    }
+
+    function calculateDecomposition() {
+      decomposedRects = [];
+      let workGrid = grid.map(row => [...row]);
+
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (workGrid[r][c]) {
+            let w = 1;
+            while (c + w < GRID_COLS && workGrid[r][c + w]) w++;
+
+            let h = 1;
+            let canExpandDown = true;
+            while (r + h < GRID_ROWS && canExpandDown) {
+              for (let i = 0; i < w; i++) {
+                if (!workGrid[r + h][c + i]) {
+                  canExpandDown = false;
+                  break;
+                }
+              }
+              if (canExpandDown) h++;
+            }
+
+            for (let yy = r; yy < r + h; yy++) {
+              for (let xx = c; xx < c + w; xx++) {
+                workGrid[yy][xx] = false;
+              }
+            }
+            decomposedRects.push({ x: c, y: r, w: w, h: h, area: w * h });
+          }
+        }
+      }
+      totalArea = decomposedRects.reduce((sum, rect) => sum + rect.area, 0);
+    }
+
+    function buildVisualLayers() {
+      const canvas = document.getElementById('canvas');
+      let svgHtml = '';
+      savedMathHtml = '';
+
+      // Base Grid
+      svgHtml += `<g id="layer-grid">`;
+      for(let i = 0; i <= GRID_COLS; i++) {
+        svgHtml += `<line x1="${i*CELL_SIZE}" y1="0" x2="${i*CELL_SIZE}" y2="${svgHeight}" stroke="#e0e0e0" stroke-width="1"/>`;
+      }
+      for(let i = 0; i <= GRID_ROWS; i++) {
+        svgHtml += `<line x1="0" y1="${i*CELL_SIZE}" x2="${svgWidth}" y2="${i*CELL_SIZE}" stroke="#e0e0e0" stroke-width="1"/>`;
+      }
+      svgHtml += `</g>`;
+
+      // LAYER 1: The Solid Shape (Now slightly transparent so the grid shows through!)
+      svgHtml += `<g id="layer-solid" style="transition: opacity 0.4s ease-in-out; opacity: 0.6;">`;
+      decomposedRects.forEach((rect) => {
+        let strokeW = 4;
+        let inset = strokeW / 2;
+        let boxX = (rect.x * CELL_SIZE) + inset;
+        let boxY = (rect.y * CELL_SIZE) + inset;
+        let boxW = (rect.w * CELL_SIZE) - strokeW;
+        let boxH = (rect.h * CELL_SIZE) - strokeW;
+
+        svgHtml += `<rect 
+          x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" 
+          fill="#607d8b" stroke="#607d8b" stroke-width="${strokeW}" stroke-linejoin="miter"
+        />`;
+      });
+      svgHtml += `</g>`;
+
+      // LAYER 2: The Decomposed Shape
+      svgHtml += `<g id="layer-decomposed" style="transition: opacity 0.4s ease-in-out; opacity: 0;">`;
+      decomposedRects.forEach((rect, index) => {
+        let color = colors[index % colors.length];
+        
+        let strokeW = 4;
+        let inset = strokeW / 2;
+        let boxX = (rect.x * CELL_SIZE) + inset;
+        let boxY = (rect.y * CELL_SIZE) + inset;
+        let boxW = (rect.w * CELL_SIZE) - strokeW;
+        let boxH = (rect.h * CELL_SIZE) - strokeW;
+
+        for(let i=1; i<rect.w; i++) {
+            svgHtml += `<line x1="${(rect.x + i)*CELL_SIZE}" y1="${rect.y*CELL_SIZE}" x2="${(rect.x + i)*CELL_SIZE}" y2="${(rect.y + rect.h)*CELL_SIZE}" stroke="${color.stroke}" stroke-width="1" opacity="0.3"/>`;
+        }
+        for(let i=1; i<rect.h; i++) {
+            svgHtml += `<line x1="${rect.x*CELL_SIZE}" y1="${(rect.y + i)*CELL_SIZE}" x2="${(rect.x + rect.w)*CELL_SIZE}" y2="${(rect.y + i)*CELL_SIZE}" stroke="${color.stroke}" stroke-width="1" opacity="0.3"/>`;
+        }
+
+        svgHtml += `<rect 
+          x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" 
+          fill="${color.fill}" stroke="${color.stroke}" stroke-width="${strokeW}" stroke-linejoin="miter"
+        />`;
+
+        let cx = (rect.x + rect.w / 2) * CELL_SIZE;
+        let cy = (rect.y + rect.h / 2) * CELL_SIZE;
+        let textStr = (rect.w > 1 && rect.h > 1) ? `${rect.w}×${rect.h}` : `${rect.area}`;
+        svgHtml += `<text x="${cx}" y="${cy}" fill="#fff" font-size="16px" text-anchor="middle" dominant-baseline="central" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">${textStr}</text>`;
+
+        savedMathHtml += `
+          <div style="color: ${color.stroke};">
+            <span style="display:inline-block; width: 20px; height: 15px; background: ${color.fill}; border: 2px solid ${color.stroke}; margin-right: 8px; vertical-align: middle;"></span>
+            <span style="vertical-align: middle;">${rect.w} × ${rect.h} = <strong>${rect.area}</strong></span>
+          </div>
+        `;
+      });
+      svgHtml += `</g>`;
+
+      canvas.innerHTML = svgHtml;
+      showSolidShape(); 
+    }
+
+    function showSolidShape() {
+      // Restore to 0.6 opacity instead of fully solid 1.0
+      document.getElementById('layer-solid').style.opacity = '0.6';
+      document.getElementById('layer-decomposed').style.opacity = '0';
+      
+      document.getElementById('equation-list').innerHTML = `<div style="color: #666; font-style: italic;">Shape is whole. Click 'Decompose' to find the area!</div>`;
+      document.getElementById('total-area').innerText = `Total Area = ?`;
+    }
+
+    function showDecomposedShape() {
+      document.getElementById('layer-solid').style.opacity = '0';
+      document.getElementById('layer-decomposed').style.opacity = '1';
+      
+      document.getElementById('equation-list').innerHTML = savedMathHtml;
+      document.getElementById('total-area').innerText = `Total Area = ${totalArea} units`;
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
