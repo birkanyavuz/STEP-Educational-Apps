@@ -80,16 +80,22 @@
   <div id="pulled-area"></div>
 
   <script>
-    let bag = [];
+  let bag = [];
     let colors = ['red', 'yellow', 'blue'];
+    let targetTotal = 20; // 👈 TEACHER CONTROL: Change this number to whatever total you want!
 
+    // 1. Guarantee at least 2 of each color so no color is left out
     for (let c = 0; c < colors.length; c++) {
-      let count = Math.floor(Math.random() * 10) + 1;
-      for (let i = 0; i < count; i++) {
-        bag.push(colors[c]);
-      }
+      bag.push(colors[c], colors[c]);
     }
 
+    // 2. Fill the rest of the bag randomly until we hit our target total
+    while(bag.length < targetTotal) {
+       let randomColor = colors[Math.floor(Math.random() * colors.length)];
+       bag.push(randomColor);
+    }
+
+    // 3. Shake the bag! (Shuffle the cubes so the colors are mixed up)
     for (let i = bag.length - 1; i > 0; i--) {
       let j = Math.floor(Math.random() * (i + 1));
       let temp = bag[i];
