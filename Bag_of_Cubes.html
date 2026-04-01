@@ -1,124 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bag of Cubes</title>
-<style>
-  body { 
-    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; 
-    text-align: center; 
-    background: #f0f8ff; 
-    padding: 20px; 
-    color: #333;
-  }
-  
-  h1 { margin-top: 10px; font-size: 2.5rem; color: #ff8c00; } 
-  
-  /* The Magic Back Button */
-  .back-btn {
-    background-color: #ffb300; 
-    padding: 10px 20px; 
-    border-radius: 10px; 
-    font-size: 1.2rem; 
-    cursor: pointer; 
-    border: none; 
-    font-weight: bold; 
-    margin-bottom: 20px; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    color: white;
-    transition: transform 0.1s;
-  }
-  .back-btn:active { transform: scale(0.95); }
-
-  #bag-icon { 
-    font-size: 80px; 
-    margin: 10px; 
-    user-select: none; 
-  }
-  
-  #pull-btn { 
-    padding: 15px 40px; 
-    font-size: 24px; 
-    font-weight: bold; 
-    background: #ff8c00; 
-    color: white; 
-    border: none; 
-    border-radius: 15px; 
-    cursor: pointer; 
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    transition: transform 0.1s;
-  }
-  #pull-btn:active { transform: scale(0.95); }
-  
-  #current-pull { 
-    min-height: 160px; 
-    margin: 20px auto; 
-    font-size: 28px; 
-    font-weight: bold; 
-  }
-  
-  .cube { 
-    width: 60px; 
-    height: 60px; 
-    display: inline-block; 
-    margin: 10px; 
-    border-radius: 8px; 
-    border: 3px solid #333; 
-    box-sizing: border-box;
-  }
-  
-  .red { background: #ff4c4c; }
-  .yellow { background: #ffd700; }
-  .blue { background: #4169e1; }
-  
-  #pulled-area { 
-    display: flex; 
-    flex-wrap: wrap; 
-    justify-content: center; 
-    width: 860px; 
-    max-width: 100%; 
-    margin: 0 auto; 
-    border: 4px dashed #ccc; 
-    padding: 20px; 
-    min-height: 150px; 
-    background: white; 
-    box-sizing: border-box; 
-    border-radius: 15px;
-  }
-</style>
-</head>
-<body>
-
-  <button class="back-btn" onclick="history.back()">⬅️ Back to Folders</button>
-
-  <h1>The Magic Cube Bag!</h1>
-  <div id="bag-icon">🛍️</div>
-  <button onclick="pullCube()" id="pull-btn">Pull a Cube!</button>
-  <div id="current-pull"><p>Click the button!</p></div>
-  <h2>Cubes We Pulled:</h2>
-  <div id="pulled-area"></div>
-
-  <script>
-    let bag = [];
+let bag = [];
     let colors = ['red', 'yellow', 'blue'];
     
-    // Pick a random total between 10 and 20 every time the page loads!
-    let targetTotal = Math.floor(Math.random() * 11) + 10; 
-
-    // 1. Guarantee at least 2 of each color so no color is left out
+    // Pick a random number between 3 and 10 for EACH color.
+    // If it hits the max for all three, you get exactly 30 cubes (10 of each)!
     for (let c = 0; c < colors.length; c++) {
-      bag.push(colors[c], colors[c]);
+      let count = Math.floor(Math.random() * 8) + 3; 
+      for (let i = 0; i < count; i++) {
+        bag.push(colors[c]);
+      }
     }
 
-    // 2. Fill the rest of the bag randomly until we hit our random target
-    while(bag.length < targetTotal) {
-       let randomColor = colors[Math.floor(Math.random() * colors.length)];
-       bag.push(randomColor);
-    }
-
-    // 3. Shake the bag! (Shuffle the cubes so the colors are mixed up)
+    // Shake the bag! (Shuffle the cubes so the colors are mixed up)
     for (let i = bag.length - 1; i > 0; i--) {
       let j = Math.floor(Math.random() * (i + 1));
       let temp = bag[i];
@@ -157,6 +49,3 @@
         btn.style.display = 'none'; // Hide the button immediately
       }
     }
-  </script>
-</body>
-</html>
