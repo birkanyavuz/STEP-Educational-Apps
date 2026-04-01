@@ -97,7 +97,7 @@ let bag = [];
        bag.push(randomColor);
     }
 
-    // 3. Shake the bag! (Shuffle the cubes)
+    // 3. Shake the bag! (Shuffle the cubes so the colors are mixed up)
     for (let i = bag.length - 1; i > 0; i--) {
       let j = Math.floor(Math.random() * (i + 1));
       let temp = bag[i];
@@ -106,6 +106,36 @@ let bag = [];
     }
 
     let totalCubes = bag.length;
+
+    // --- THIS IS THE PART THAT WAS MISSING! ---
+    function pullCube() {
+      let currentPullDiv = document.getElementById('current-pull');
+      let pulledArea = document.getElementById('pulled-area');
+      let btn = document.getElementById('pull-btn');
+
+      // Pull the cube out of the bag
+      let cubeColor = bag.pop();
+      
+      // Show the pulled cube big in the center
+      currentPullDiv.innerHTML = "<p>We pulled a <strong>" + cubeColor.toUpperCase() + "</strong> cube!</p>";
+      
+      let bigCube = document.createElement('div');
+      bigCube.className = 'cube ' + cubeColor;
+      bigCube.style.transform = "scale(1.5)"; 
+      bigCube.style.margin = "20px";
+      currentPullDiv.appendChild(bigCube);
+
+      // Add the normal sized cube to the bottom area
+      let smallCube = document.createElement('div');
+      smallCube.className = 'cube ' + cubeColor;
+      pulledArea.appendChild(smallCube);
+
+      // Check if the bag is empty immediately AFTER the pull
+      if (bag.length === 0) {
+        currentPullDiv.innerHTML += "<p>🎉 That was the last one! The bag is empty. We pulled " + totalCubes + " cubes total.</p>";
+        btn.style.display = 'none'; // Hide the button immediately
+      }
+    }
       }
     }
   </script>
